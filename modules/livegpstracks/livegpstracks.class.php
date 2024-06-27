@@ -379,88 +379,98 @@ socket_write ($socket,$sendStr );   // by group data transmission
 
 	$table='lgps_in';	
 	$properties=SQLSelect("SELECT * FROM $table;");
+	
 
-foreach ($properties as $did)
-{
-$num=$did['DID'];
-$title=$did['TITLE'];
-//$urls[] = ['url' => 'http://livegpstracks.com/viewer_coos_s.php?code='.$num];
-$urls[] = ['url' => 'http://livegpstracks.com/viewer_coos_s.php?code='.$num,'name'=>$title,'numer'=>$num];
-}	
+	foreach ($properties as $did)
+	{
+	$num=$did['DID'];
+	$title=$did['TITLE'];
+	//$urls[] = ['url' => 'http://livegpstracks.com/viewer_coos_s.php?code='.$num];
+	$urls[] = ['url' => 'http://livegpstracks.com/viewer_coos_s.php?code='.$num,'name'=>$title,'numer'=>$num];
+	}	
 
-
-
+	foreach ($urls as $url1) {
 		
-foreach ($urls as $url1) {
-     
-//echo $url1['url'];
-$title=$url1['name'];
-$numer=$url1['numer'];
-$content=getURL($url1['url'], 0);  
-$data=json_decode($content,true);
-//$objn=$data[0]['id'];
-$objn=$data[0]['code'];
-     
-//echo $objn.'----------------';
-if ($objn<>'') {
-addClassObject('livegpstracks',$objn);
-$src=$data[0];
-     
-$lud=gg($objn.'.d'); $lut=gg($objn.'.d');         
-     
-     
-sg( $objn.'.json',$content);
-sg( $objn.'.link','https://livegpstracks.com/dv_'.$objn.'.html'); 
-sg( $objn.'.title',$title);     
-foreach ($src as $key=> $value ) {
-   sg( $objn.'.'.$key,$value);
- //echo $key;
-$upd = false;
-}     
-
-$rec=SQLSelectOne("SELECT * FROM lgps_in WHERE DID='".$numer."'");
-//$rec['VALUE'] = 'ok';
-$smadr=$this->getaddrfromcoord(gg($objn.'.lat'),gg($objn.'.lng'));
-//$smadr='РЎС“Р В»Р С‘РЎвЂ Р В°';
-//$smadr=$this->ga('56.836498','60.691435' );
-$rec['VALUE'] = gg($objn.'.lat').','.gg($objn.'.lng') ;
-$rec['COORD'] = gg($objn.'.lat').','.gg($objn.'.lng') ;	
-//$rec['VALUE'] = $smadr ;
-$rec['GPSLBS'] =gg($objn.'.gpslbs'); 
-if (gg($objn.'.battery')<>"" ) {$rec['BATTERY'] =gg($objn.'.battery'); }
-if (gg($objn.'.perbattery')<>"" ) {$rec['BATTERY'] =gg($objn.'.perbattery'); }	
-	
-$rec['TEMP'] =gg($objn.'.temper'); 
-$rec['DEVICE'] =gg($objn.'.device'); 
-$rec['UPDATED'] = date('Y-m-d H:i:s');
-SQLUpdate('lgps_in', $rec);
-//if ($lud<> gg($objn.'.d')   and  ($lut<> gg($objn.'.t'))) {
-    
-$url = BASE_URL . '/gps.php?latitude=' . gg($objn.'.lat')
-        . '&longitude=' . gg($objn.'.lng')
-        . '&altitude=' . gg($objn.'.altitude')
-        . '&accuracy=' . gg($objn.'.gpsaccuracy') 
-        . '&provider=' . gg($objn.'.cellid') 
-        . '&speed='       .gg($objn.'.speed') 
-        . '&battlevel=' . gg($objn.'.battery') 
-        . '&charging=' . gg($objn.'.charging') 
-        . '&deviceid=' . $objn ;
-getURL($url, 0);
-//$adr=getaddrfromcoord(gg($objn.'.lat'),gg($objn.'.lng'));  
-sg($objn.'.address', $adr); 
-//$spl=split(',',$adr) ;
-$spl=explode(',',$adr) ;
-sg($objn.'.short_address', $spl[0]); 
-sg($objn.'.gpsupdate', 'updated'); 
-//}    
-//else {sg($objn.'.gpsupdate', 'no need'); }     
-}				
-
-}
-						
-
-		}
-	
+	//echo $url1['url'];
+	$title=$url1['name'];
+	$numer=$url1['numer'];
+	$content=getURL($url1['url'], 0);  
+	$data=json_decode($content,true);
+	//$objn=$data[0]['id'];
+	$objn=$data[0]['code'] ?? '';
+		
+	//echo $objn.'----------------';
+		if ($objn<>'') {
+		//addClassObject('livegpstracks',$objn);
+		$src=$data[0];
+		//print_r($src);
+			
+		//$lud = $lut = gg($objn.'.d');      
+			
+			
+		//sg( $objn.'.json',$content);
+		//sg( $objn.'.link','https://livegpstracks.com/dv_'.$objn.'.html'); 
+		//sg( $objn.'.title',$title);     
+		//foreach ($src as $key=> $value ) {
+		//   if ($key == 'lat' or $key == 'lng') sg( $objn.'.'.$key,$value);
+		//echo $key;
+		//	$upd = false;
+		//}     
+		
+		$rec=SQLSelectOne("SELECT * FROM lgps_in WHERE DID='".$numer."'");
+		//$rec['VALUE'] = 'ok';
+		$latitude = substr($src['lat'],0,7);
+		$longitude = substr($src['lng'],0,8);
+		$coord = $latitude.','.$longitude;
+		$a = explode(',',$rec['VALUE']);
+		//print_r($a);
+		//$smadr=$this->getaddrfromcoord($coord);
+		//$smadr='РЎС“Р В»Р С‘РЎвЂ Р В°';
+		//$smadr=$this->ga('56.836498','60.691435' );
+		if($src['utc'] < $rec['TEMP']) continue;
+		$rec['TEMP'] = $src['utc'];
+		//print $rec['TEMP'];
+		if($coord == $rec['VALUE'] or $coord == $rec['COORD']) continue;
+		//print $src['utc'];
+		//debmes($coord);
+		$rec['COORD'] = $rec['VALUE'];	
+		$rec['VALUE'] = $coord;
+		//$rec['VALUE'] = $smadr ;
+		$rec['GPSLBS'] =$src['gpslbs']; 
+		if ($src['battery']<>"" ) $rec['BATTERY'] =$src['battery']; 
+		if ($src['perbattery']<>"" ) $rec['BATTERY'] =$src['perbattery']; 	
+			
+		//$rec['TEMP'] =$src['temper']; 
+		$rec['DEVICE'] =$src['device']; 
+		$rec['UPDATED'] = date('Y-m-d H:i:s');
+		SQLUpdate('lgps_in', $rec);
+		//if ($lud<> gg($objn.'.d')   and  ($lut<> gg($objn.'.t'))) {
+		if(($src['gpsaccuracy'] == "")) $src['gpsaccuracy'] = 0;
+		if(($src['cellid'] == "")) $src['cellid'] = 0;
+		if(!isset($src['charging']) || $src['charging'] == "") $src['charging'] = 0;
+		$url = BASE_URL . '/gps.php?latitude=' . $src['lat']
+				. '&longitude=' .$src['lng']
+				. '&altitude='  .$src['altitude']
+				. '&accuracy='  .$src['gpsaccuracy'] 
+				. '&provider='  .$src['cellid'] 
+				. '&speed='     .$src['speed'] 
+				. '&battlevel=' .$src['battery'] 
+				. '&charging='  .$src['charging'] 
+				. '&deviceid='  .$objn
+				. '&op=';
+		//print $url. "\n";
+		getURL($url, 0);
+		//$adr=getaddrfromcoord(gg($objn.'.lat'),gg($objn.'.lng'));  
+		//sg($objn.'.address', $adr); 
+		//$spl=split(',',$adr) ;
+		//$spl=explode(',',$adr) ;
+		//sg($objn.'.short_address', $spl[0]); 
+		sg($objn.'.gpsupdate', 'updated: '.date('Y-m-d H:i:s')); 
+		//}    
+		//else {sg($objn.'.gpsupdate', 'no need'); }     
+		}					
+	}					
+}	
  
    
  

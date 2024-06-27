@@ -21,11 +21,15 @@ $livegpstracks_module->getConfig();
  
 echo date("H:i:s") . " running " . basename(__FILE__) . PHP_EOL;
 $latest_check=0;
-$checkEvery=60; // poll every 5 minutesz
+$checkEvery=20; // poll every 5 minutesz
 //$checkEvery=$livegpstracks_module->config['EVERY'];
+$timeUpdate = 0;
 while (1)
 {
-   setGlobal((str_replace('.php', '', basename(__FILE__))) . 'Run', time(), 1);
+   if(time() - $timeUpdate > 20){
+     setGlobal((str_replace('.php', '', basename(__FILE__))) . 'Run', time(), 1);
+	 $timeUpdate = time();
+   }
    if ((time()-$latest_check)>$checkEvery) {
     $latest_check=time();
     //echo date('Y-m-d H:i:s').' Polling devices...\n';
